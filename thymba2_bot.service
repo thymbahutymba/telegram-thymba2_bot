@@ -1,0 +1,13 @@
+[Unit]
+Description=thymba2_bot 
+After=network.target
+
+[Service]
+ExecStart=/home/alarm/github/thymba2_bot/thymba2_bot.py
+WorkingDirectory = /home/alarm/github/thymba2_bot/
+Restart=on-success
+RestartSec=1m
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
