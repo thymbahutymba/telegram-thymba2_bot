@@ -36,9 +36,6 @@ set ylabel "Frequency"
 set ytics 100
 set offset 0,0,150,50
 
-plot "/tmp/thymba2_bot/measurements.dat" using 1:3 title 'core0' lw 3 , \
-	'' u 1:4 title 'core1' lw 3 lc rgb 'green', \
-	'' u 1:5 title 'core2' lw 3 lc rgb 'red', \
-	'' u 1:6 title 'core3' lw 3 lc rgb 'blue'
+plot for [i=3:6] "/tmp/thymba2_bot/measurements.dat" using 1:i title 'core'.(i-3) lw 3
 
 # vim: set ts=4 sw=4 tw=120 noet :
