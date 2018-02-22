@@ -12,6 +12,9 @@ from logging.handlers import RotatingFileHandler
 ###################################################
 ##################### LOGGING #####################
 ###################################################
+
+sys.tracebacklimit = 0
+
 logger = telebot.logger
 logger.removeHandler(logger.handlers[0])
 
@@ -48,52 +51,50 @@ except Exception as e:
 	logger.error(str(e))
 	sys.exit(0)
 
-bot = telebot.TeleBot(token)
 information = Measurements()
-
 semaphore = threading.Semaphore(value=1)
-threading.Thread(target=information.take_info, args=(semaphore,)).start()
-
-def are_you(username):
-	if username == user:
-		return True
-	return False
-
-@bot.message_handler(regexp="^ping$")
-def on_ping(message):
-	if are_you(message.from_user.username):
-		bot.reply_to(message, "pong")
-
-@bot.message_handler(commands=['graph'])
-def on_graph(message):
-	if not are_you(message.from_user.username):
-		return
-	
-	with semaphore:
-		with open(f_meas, 'w') as data:
-			how_much = len(information.data['times'])
-			data.write("# File generated on {}\n# Date\tTemperature\n".format(datetime.now()))
-
-			for i, t in enumerate(information.data['times']):
-				append = "\"{}\"".format(t)
-				for ind_f in range(0, len(information.data['files'])):
-					append += "\t{}".format(information.data['values'][ind_f][i])
-
-				append += "\n"
-				data.write(append)
-
-	os.system(create_image)
-	bot.send_photo(message.chat.id, open(image, "rb"))
+t_info = threading.Thread(target=information.take_info, args=(semaphore,))
+t_info.daemon = True
+t_info.start()
 
 while True:
+	bot = telebot.TeleBot(token)
+
+	def are_you(username):
+		return username == user
+
+	@bot.message_handler(regexp="^ping$")
+	def on_ping(message):
+		if are_you(message.from_user.username):
+			bot.reply_to(message, "pong")
+
+	@bot.message_handler(commands=['graph'])
+	def on_graph(message):
+		if not are_you(message.from_user.username):
+			return
+	
+		with semaphore:
+			with open(f_meas, 'w') as data:
+				how_much = len(information.data['times'])
+				data.write("# File generated on {}\n# Date\tTemperature\n".format(datetime.now()))
+	
+				for i, t in enumerate(information.data['times']):
+					append = "\"{}\"".format(t)
+					for ind_f in range(0, len(information.data['files'])):
+						append += "\t{}".format(information.data['values'][ind_f][i])
+
+					append += "\n"
+					data.write(append)
+
+		os.system(create_image)
+		bot.send_photo(message.chat.id, open(image, "rb"))
+
 	try:
-		#bot = telebot.TeleBot(token)
-		bot.polling()
+		bot.polling(none_stop=True)
 	except Exception as e:
-		logger.error("Bot polling failed, restarting in {}sec. Error: {}".format(BOT_RESTART,str(e)))
+		logger.error("Bot polling failed, restarting. Error: {}".format(str(e)))
 		bot.stop_polling()
-		sleep(BOT_RESTART)
-		bot = telebot.TeleBot(token)
-		#sys.exit(15)
+		del bot
+		#sleep(BOT_RESTART)
 
 # vim: set ts=4 sw=4 tw=120 noet :
