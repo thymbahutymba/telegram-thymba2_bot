@@ -4,9 +4,9 @@ import json
 from datetime import datetime
 
 """
-Limit measurements to 6 hours. 
+Limit measurements to 6 hours and 15 minutes. 
 1 measurement every 30s -> 120 measurements for hours
-Limit measurements to 720
+Limit measurements to 750
 """
 
 class Measurements():
@@ -17,7 +17,8 @@ class Measurements():
 		'values': []
 	}
 
-	m_limit = 720
+	tt_sleep = 30
+	m_limit = 750
 
 	def __init__(self):
 		with open("config.json") as config:
@@ -45,4 +46,4 @@ class Measurements():
 					for i in range(0, len(self.data['values'])):
 						self.data['values'][i].pop(0)
 
-			t.sleep(30)
+			t.sleep(tt_sleep)
